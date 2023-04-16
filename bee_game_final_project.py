@@ -12,17 +12,17 @@ class Bee:
         self.x=app.cursorX
         self.y=app.cursorY
 
-class Flower:
-    pollinator=[]
+class Pollinator:
+    pollinatorList=[]
     gathered=[]
     def __init__(self,x,y,color):
         self.x=x
         self.y=y
-        self.color=color
+        self.color="red"
         self.gathered=False
         self.pollenGathered=0
-        Flower.pollinator.append(self)
-    def drawFlower(self):
+        Pollinator.pollinatorList.append(self)
+    def drawPollinator(self):
         drawCircle(self.x,self.y,15,fill=self.color)
     def isClose(self,other):
         if distance(self.x,self.y,other.x,other.y)<=40:  
@@ -30,16 +30,42 @@ class Flower:
         else: 
             return False
     def gatheredState(self,app):
-        for flower in Flower.pollinator:
+        for pollinator in Pollinator.pollinatorList:
+            if pollinator.isClose(app.player) and\
+                pollinator not in Pollinator.gathered:
+                Pollinator.gathered.append(pollinator)
+                return True
+    def pollinatorOnStep(self):
+        self.y-=10
+
+class Flower:
+    flowerList=[]
+    gathered=[]
+    def __init__(self,x,y,color):
+        self.x=x
+        self.y=y
+        #self.width=20
+        #self.height=20
+        self.color="blue"
+        Flower.flowerList.append(self)
+    def drawFlower(self):
+        drawCircle(self.x,self.y,15,fill=self.color)
+    def isClose(self,other):
+        if distance(self.x,self.y,other.x,other.y)<=40:  
+            return True
+        else: 
+            return False
+    def pollinatedState(self,app):
+        for flower in Flower.flowerList:
             if flower.isClose(app.player) and\
-                flower not in Flower.gathered:
+                flower not in flower.gathered:
                 Flower.gathered.append(flower)
                 return True
     def flowerOnStep(self):
         self.y-=10
 
 def onAppStart(app):
-    #app.stepsPerSecond=5
+    app.stepsPerSecond=25
     app.stepTimeCounter=0
     app.width=800
     app.height=800
@@ -51,7 +77,9 @@ def onAppStart(app):
 
 def redrawAll(app):
     app.player.drawPlayer()
-    for flower in Flower.pollinator:
+    for pollinator in Pollinator.pollinatorList:
+        pollinator.drawPollinator()
+    for flower in Flower.flowerList: 
         flower.drawFlower()
 
     for (cx,cy) in app.pollen:
@@ -66,13 +94,22 @@ def onStep(app):
     app.stepTimeCounter+=1
     app.player.playerOnStep(app)
     if app.stepTimeCounter%50==0:
-        Flower(random.randrange(800),800,"red")
-    for flower in Flower.pollinator:
-        if flower.gatheredState(app):
+        Pollinator(random.randrange(800),800,"red")
+        Flower(random.randrange(800),800,"blue")
+    for pollinator in Pollinator.pollinatorList:
+        if pollinator.gatheredState(app):
             app.numOfPollen+=1
             numOfPollen=app.numOfPollen
             app.pollen.append((25+20*numOfPollen,25))
-    for flower in Flower.pollinator:
+    for flower in Flower.flowerList: 
+        if flower.pollinatedState(app):
+            if app.pollen!=[]:
+                app.pollen.pop()
+                app.numOfPollen-=1
+                numOfPollen=app.numOfPollen
+    for pollinator in Pollinator.pollinatorList:
+        pollinator.pollinatorOnStep()
+    for flower in Flower.flowerList: 
         flower.flowerOnStep()
 
 
