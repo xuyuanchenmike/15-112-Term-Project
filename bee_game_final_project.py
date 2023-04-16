@@ -12,15 +12,14 @@ class Bee:
         self.y=app.cursorY
 
 class Flower:
-    flowerList=[(300,300),(50,50),(100,100),(150,80)]
-    pollinator=[(500,200),(600,300),(550,450),(330,400)]
-    def __init__(self,x,y,color,pollinator):
+    pollinator=[(200,200,"red"),(500,500,"red"),(100,200,"red")]
+    gathered=[]
+    def __init__(self,x,y,color):
         self.x=x
         self.y=y
         self.color=color
-        self.pollinator=True
         self.gathered=False
-
+        self.pollenGathered=0
     def drawFlower(self):
         drawCircle(self.x,self.y,15,fill=self.color)
     def isClose(self,other):
@@ -28,14 +27,14 @@ class Flower:
             return True
         else: 
             return False
-        
-    def gatheredState(self,app): 
-        if self.pollinator:
-            if not self.gathered:
-                for (flowerX,flowerY) in Flower.pollinator:
-                    if Flower(flowerX,flowerY,"red",None).isClose(app.player):
-                        self.gathered=True
-                        return True
+    def gatheredState(self,app):
+        for (flowerX,flowerY,color) in Flower.pollinator:
+            if Flower(flowerX,flowerY,color).isClose(app.player) and\
+                (flowerX,flowerY,color) not in Flower.gathered:
+                Flower.gathered.append((flowerX,flowerY,color))
+                return True
+    def flowerOnStep(self):
+        self.y+=10
 
 def onAppStart(app):
     app.width=800
@@ -45,26 +44,31 @@ def onAppStart(app):
     app.player=Bee(200,200)
     app.numOfPollen=0
     app.pollen=[]
-    app.alreadyGathered=[]
 
 def redrawAll(app):
     app.player.drawPlayer()
     for i in range(len(Flower.pollinator)):
         flowerX=Flower.pollinator[i][0]
         flowerY=Flower.pollinator[i][1]
-        Flower(flowerX,flowerY,"red","pollinator").drawFlower()
+        color=Flower.pollinator[i][2]
+        Flower(flowerX,flowerY,color).drawFlower()
+
     for (cx,cy) in app.pollen:
         drawCircle(cx,cy,10,fill="red")
 
 def onMouseMove(app,mouseX,mouseY):
     app.cursorX=mouseX
-    app.cursorY=mouseY
-    if Flower(0,0,"red","pollinator").gatheredState(app):
-            app.numOfPollen+=1
-            app.pollen.append((25+10*app.numOfPollen,25))
-            app.alreadyGathered.append((app.cursorX,app.cursorY))
-def onStep(app): 
+    app.cursorY=mouseY 
+                
+
+def onStep(app):
     app.player.playerOnStep(app)
+    if Flower(0,0,"red").gatheredState(app):
+        app.numOfPollen+=1
+        numOfPollen=app.numOfPollen
+        app.pollen.append((25+20*numOfPollen,25))
+    for (flowerX,flowerY,color) in Flower.pollinator:
+        Flower(flowerX,flowerY,color).flowerOnStep()
 
 def distance(x1,y1,x2,y2): 
     return ((x1-x2)**2+(y1-y2)**2)**(1/2)
