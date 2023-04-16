@@ -40,6 +40,7 @@ class Flower:
 
 def onAppStart(app):
     #app.stepsPerSecond=5
+    app.stepTimeCounter=0
     app.width=800
     app.height=800
     app.cursorX=200
@@ -62,8 +63,9 @@ def onMouseMove(app,mouseX,mouseY):
                 
 
 def onStep(app):
+    app.stepTimeCounter+=1
     app.player.playerOnStep(app)
-    if random.randrange(800)<50:
+    if app.stepTimeCounter%50==0:
         Flower(random.randrange(800),800,"red")
     for flower in Flower.pollinator:
         if flower.gatheredState(app):
