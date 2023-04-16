@@ -1,5 +1,6 @@
 from cmu_graphics import *
 import math,copy
+import random
 
 class Bee: 
     def __init__(self,x,y): 
@@ -12,7 +13,7 @@ class Bee:
         self.y=app.cursorY
 
 class Flower:
-    pollinator=[(200,200,"red"),(500,500,"red"),(100,200,"red")]
+    pollinator=[]
     gathered=[]
     def __init__(self,x,y,color):
         self.x=x
@@ -20,6 +21,7 @@ class Flower:
         self.color=color
         self.gathered=False
         self.pollenGathered=0
+        Flower.pollinator.append(self)
     def drawFlower(self):
         drawCircle(self.x,self.y,15,fill=self.color)
     def isClose(self,other):
@@ -28,15 +30,16 @@ class Flower:
         else: 
             return False
     def gatheredState(self,app):
-        for (flowerX,flowerY,color) in Flower.pollinator:
-            if Flower(flowerX,flowerY,color).isClose(app.player) and\
-                (flowerX,flowerY,color) not in Flower.gathered:
-                Flower.gathered.append((flowerX,flowerY,color))
+        for flower in Flower.pollinator:
+            if flower.isClose(app.player) and\
+                flower not in Flower.gathered:
+                Flower.gathered.append(flower)
                 return True
     def flowerOnStep(self):
-        self.y+=10
+        self.y-=10
 
 def onAppStart(app):
+    #app.stepsPerSecond=5
     app.width=800
     app.height=800
     app.cursorX=200
@@ -47,11 +50,8 @@ def onAppStart(app):
 
 def redrawAll(app):
     app.player.drawPlayer()
-    for i in range(len(Flower.pollinator)):
-        flowerX=Flower.pollinator[i][0]
-        flowerY=Flower.pollinator[i][1]
-        color=Flower.pollinator[i][2]
-        Flower(flowerX,flowerY,color).drawFlower()
+    for flower in Flower.pollinator:
+        flower.drawFlower()
 
     for (cx,cy) in app.pollen:
         drawCircle(cx,cy,10,fill="red")
@@ -63,12 +63,21 @@ def onMouseMove(app,mouseX,mouseY):
 
 def onStep(app):
     app.player.playerOnStep(app)
-    if Flower(0,0,"red").gatheredState(app):
-        app.numOfPollen+=1
-        numOfPollen=app.numOfPollen
-        app.pollen.append((25+20*numOfPollen,25))
-    for (flowerX,flowerY,color) in Flower.pollinator:
-        Flower(flowerX,flowerY,color).flowerOnStep()
+    if random.randrange(800)<50:
+        Flower(random.randrange(800),800,"red")
+    for flower in Flower.pollinator:
+        if flower.gatheredState(app):
+            app.numOfPollen+=1
+            numOfPollen=app.numOfPollen
+            app.pollen.append((25+20*numOfPollen,25))
+    for flower in Flower.pollinator:
+        flower.flowerOnStep()
+
+
+# flower1=Flower(random.randrange(800),800,"red")
+# flower2=Flower(random.randrange(800),800,"red")
+# flower3=Flower(random.randrange(800),800,"red")
+# flower4=Flower(random.randrange(800),800,"red")
 
 def distance(x1,y1,x2,y2): 
     return ((x1-x2)**2+(y1-y2)**2)**(1/2)
