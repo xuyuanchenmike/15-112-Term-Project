@@ -30,10 +30,11 @@ class Pollinator:
         else: 
             return False
     def gatheredState(self,app):
-        #for pollinator in Pollinator.pollinatorList:
-            if self.isClose(app.player) and\
-                self not in Pollinator.gathered:
-                Pollinator.gathered.append(self)
+        for pollinator in Pollinator.pollinatorList:
+            if pollinator.isClose(app.player) and\
+                pollinator not in Pollinator.gathered:
+                Pollinator.gathered.append(pollinator)
+                self.gathered=True
                 return True
     def pollinatorOnStep(self):
         self.y-=10
@@ -46,7 +47,7 @@ class Flower:
         self.y=y
         self.width=50
         self.height=50
-        self.color=random.choice(["red","blue","green","purple"])
+        self.color=color
         Flower.flowerList.append(self)
     def drawFlower(self):
         drawRect(self.x,self.y,self.width,self.height,fill=self.color,\
@@ -58,10 +59,10 @@ class Flower:
         else: 
             return False
     def pollinatedState(self,app):
-        #for flower in Flower.flowerList:
-            if self.isClose(app.player) and\
-                self not in self.gathered:
-                Flower.gathered.append(self)
+        for flower in Flower.flowerList:
+            if flower.isClose(app.player) and\
+                flower not in flower.gathered:
+                Flower.gathered.append(flower)
                 return True
     def flowerOnStep(self):
         self.y-=10
@@ -98,18 +99,19 @@ def onStep(app):
         Pollinator(random.randrange(800),800,"pink")
         Flower(random.randrange(800),800,50,50,"blue")
     for pollinator in Pollinator.pollinatorList:
+        color=pollinator.color
+        print(color)
         if pollinator.gatheredState(app):
             app.numOfPollen+=1
             numOfPollen=app.numOfPollen
-            app.pollen.append((25+20*numOfPollen,25,\
-                               pollinator.color))
-              
+            app.pollen.append((25+20*numOfPollen,25,color))
+    print(app.pollen)
     for flower in Flower.flowerList: 
         if flower.pollinatedState(app):
             if app.pollen!=[]:
                 app.pollen.pop()
                 app.numOfPollen-=1
-                
+                numOfPollen=app.numOfPollen
     for pollinator in Pollinator.pollinatorList:
         pollinator.pollinatorOnStep()
     for flower in Flower.flowerList: 
