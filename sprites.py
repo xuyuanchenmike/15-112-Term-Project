@@ -8,19 +8,19 @@ def openImage(fileName):
 def onAppStart(app):
     #Sprite Strip: 'http://www.cs.cmu.edu/~112/notes/sample-spritestrip.png'
     
-    spritestrip = Image.open('images/spritestrip.png')
+    spritestrip = Image.open('beeSprite.gif')
     
     # Alternatively, if this throw an error,
     # as shown in basicPILMethods.py,
     # comment out the above line and use the following:
     
-    spritestrip = openImage('images/spritestrip.png')
+    #spritestrip = openImage('images/spritestrip.png')
     
     app.sprites = [ ]
     for i in range(6):
         # Split up the spritestrip into its separate sprites
         # then save them in a list
-        sprite = CMUImage(spritestrip.crop((30+260*i, 30, 230+260*i, 250)))
+        sprite = CMUImage(spritestrip.crop((150, 150, 160, 160)))
         app.sprites.append(sprite)
         
     # app.spriteCounter shows which sprite (of the list) 
@@ -33,10 +33,10 @@ def onStep(app):
 
 def redrawAll(app):
     sprite = app.sprites[app.spriteCounter]
-    drawImage(sprite,200, 200)
+    drawImage(sprite,400,400 ,align="center")
 
 def main():
-    runApp(width=400, height=400)
+    runApp(width=800, height=800)
 
 if __name__ == '__main__':
     main()

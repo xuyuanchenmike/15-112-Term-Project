@@ -1,13 +1,37 @@
 from cmu_graphics import *
+from PIL import Image
+import random, time
 import math,copy
-import random
+#import random
 
 class Bee: 
     def __init__(self,x,y): 
+        myGif = Image.open('beeSprite.gif')
+        self.spriteList = []
+        for frame in range(myGif.n_frames):  #For every frame index...
+            #Seek to the frame, convert it, add it to our sprite list
+            myGif.seek(frame)
+            fr = myGif.resize((myGif.size[0]//10, myGif.size[1]//10))
+            fr = fr.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            fr = CMUImage(fr)
+            self.spriteList.append(fr)
+
+        ##Fix for broken transparency on frame 0
+        self.spriteList.pop(0)
+        #Set sprite counters
+        self.stepCounter = 0
+        self.spriteCounter = 0
         self.x=x
         self.y=y
     def drawPlayer(self):
-        drawCircle(self.x,self.y,25,fill="orange")
+        #Draw current kirb sprite
+        drawImage(self.spriteList[self.spriteCounter], 
+                  self.x, self.y, align = 'center')
+    def doStep(self):
+        self.stepCounter += 1
+        if self.stepCounter >= 10: #Update the sprite every 10th call
+            self.spriteCounter = (self.spriteCounter + 1) % len(self.spriteList)
+            self.stepCounter = 0
     def playerOnStep(self,app):
         self.x=app.cursorX
         self.y=app.cursorY
@@ -79,7 +103,7 @@ def onAppStart(app):
     app.pollen=[]
 
 def redrawAll(app):
-    drawRect(400,400,800,800,fill="cyan",align="center")
+    #drawRect(400,400,800,800,fill="cyan",align="center")
     app.player.drawPlayer()
     for flower in Flower.flowerList: 
         flower.drawFlower()
@@ -93,6 +117,7 @@ def onMouseMove(app,mouseX,mouseY):
     app.cursorY=mouseY 
                 
 def onStep(app):
+    app.player.doStep()
     app.stepTimeCounter+=1
     app.player.playerOnStep(app)
     if app.stepTimeCounter%50==0:
