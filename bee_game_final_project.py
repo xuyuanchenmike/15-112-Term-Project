@@ -33,8 +33,10 @@ class Bee:
             self.stepCounter = 0
 
     def playerOnStep(self,app):
-        self.x=app.cursorX
-        self.y=app.cursorY
+        self.dx=app.cursorX-self.x
+        self.dy=app.cursorY-self.y
+        self.x+=self.dx/4
+        self.y+=self.dy/4
 
 class Pollinator:
     pollinatorList=[]
@@ -42,6 +44,8 @@ class Pollinator:
     def __init__(self,x,y,color):
         self.x=x
         self.y=y
+        self.up=random.randrange(7,11)
+        self.c=random.randrange(1,4)
         self.color=random.choice(["red","blue","green","purple"])
         self.gathered=False
         self.pollenGathered=0
@@ -60,7 +64,10 @@ class Pollinator:
                 Pollinator.gathered.append(self)
                 return True
     def pollinatorOnStep(self):
-        self.y-=10
+        self.y-=self.up
+        self.x+=self.c*math.sin(0.005*self.y)
+
+
 
 class Flower:
     flowerList=[]
@@ -68,9 +75,12 @@ class Flower:
     def __init__(self,x,y,width,height,color):
         self.x=x
         self.y=y
-        self.width=50
-        self.height=50
+        self.up=random.randrange(7,11)
+        self.width=35
+        self.height=35
         self.color=random.choice(["red","blue","green","purple"])
+        self.outBound=False
+        self.c=random.randrange(1,4)
         Flower.flowerList.append(self)
     def drawFlower(self):
         drawRect(self.x,self.y,self.width,self.height,fill=self.color,\
@@ -88,7 +98,9 @@ class Flower:
                 Flower.gathered.append(self)
                 return True
     def flowerOnStep(self):
-        self.y-=10
+        self.y-=self.up
+        self.x+=self.c*math.sin(0.005*self.y)
+
 
 def onAppStart(app):
     app.stepsPerSecond=25
@@ -107,8 +119,13 @@ def redrawAll(app):
         flower.drawFlower()
     for pollinator in Pollinator.pollinatorList:
         pollinator.drawPollinator()
-    for (cx,cy,color) in app.pollen:
+    # Draw pollen list
+    cx = 25
+    for (_,_,color) in app.pollen:
+        cy = 25
         drawCircle(cx,cy,10,fill=color)
+        drawCircle(app.player.x,app.player.y+35,10,fill=color)
+        cx += 20
 
 def onMouseMove(app,mouseX,mouseY):
     app.cursorX=mouseX
@@ -119,20 +136,25 @@ def onStep(app):
     app.stepTimeCounter+=1
     app.player.playerOnStep(app)
     if app.stepTimeCounter%50==0:
-        Pollinator(random.randrange(800),800,"pink")
         Flower(random.randrange(800),800,50,50,"blue")
+        Pollinator(random.randrange(800),800,"pink")
     for pollinator in Pollinator.pollinatorList:
         if pollinator.gatheredState(app):
             app.numOfPollen+=1
             numOfPollen=app.numOfPollen
             app.pollen.append((25+20*numOfPollen,25,\
                                pollinator.color))
-              
+    colorList=[]
+    for pollen in app.pollen: 
+        colorList.append(pollen[2])
     for flower in Flower.flowerList: 
         if flower.pollinatedState(app):
             if app.pollen!=[]:
-                app.pollen.pop()
-                app.numOfPollen-=1
+                if flower.color in colorList:
+                    app.pollen.pop((colorList.index(flower.color)))
+                    flower.width+=20
+                    flower.height+=20
+                    app.numOfPollen-=1
                 
     for pollinator in Pollinator.pollinatorList:
         pollinator.pollinatorOnStep()
