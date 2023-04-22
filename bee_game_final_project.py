@@ -6,30 +6,41 @@ import math,copy
 class Bee: 
     def __init__(self,x,y): 
         myGif = Image.open('beeSprite.gif')
-        self.spriteList = []
+        self.leftSpriteList = []
+        self.rightSpriteList=[]
         for frame in range(myGif.n_frames):  #For every frame index...
             #Seek to the frame, convert it, add it to our sprite list
             myGif.seek(frame)
-            fr = myGif.resize((myGif.size[0]//8, myGif.size[1]//8))
-            fr = fr.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            image = myGif.resize((myGif.size[0]//8, myGif.size[1]//8))
+            fr = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             fr = CMUImage(fr)
-            self.spriteList.append(fr)
+            right=CMUImage(image)
+            #self.spriteList=[fr,right]
+            self.leftSpriteList.append(fr)
+            self.rightSpriteList.append(right)
 
         ##Fix for broken transparency on frame 0
-        self.spriteList.pop(0)
+        self.rightSpriteList.pop(0)
+        self.leftSpriteList.pop(0)
         #Set sprite counters
         self.stepCounter = 0
         self.spriteCounter = 0
         self.x=x
         self.y=y
+        self.direction="left"
+
     def drawPlayer(self):
         #Draw current kirb sprite
-        drawImage(self.spriteList[self.spriteCounter], 
+        if self.direction=="left":
+            drawImage(self.leftSpriteList[self.spriteCounter], 
+                  self.x, self.y, align = 'center')
+        elif self.direction=="right":
+            drawImage(self.rightSpriteList[self.spriteCounter], 
                   self.x, self.y, align = 'center')
     def doStep(self):
         self.stepCounter += 1
         if self.stepCounter >= 10: #Update the sprite every 10th call
-            self.spriteCounter = (self.spriteCounter + 1) % len(self.spriteList)
+            self.spriteCounter = (self.spriteCounter + 1) % len(self.rightSpriteList)
             self.stepCounter = 0
 
     def playerOnStep(self,app):
@@ -37,6 +48,10 @@ class Bee:
         self.dy=app.cursorY-self.y
         self.x+=self.dx/4
         self.y+=self.dy/4
+        if self.dx>0: 
+            self.direction="left"
+        else: 
+            self.direction="right"
 
 class Pollinator:
     pollinatorList=[]
@@ -126,6 +141,11 @@ def redrawAll(app):
         drawCircle(cx,cy,10,fill=color)
         drawCircle(app.player.x,app.player.y+35,10,fill=color)
         cx += 20
+    # if app.player.direction=="left": 
+    #     app.player.leftSpriteList
+    # elif app.player.direction=="right":
+    #     app.player.rightSpriteList
+    #app.player.drawPlayer()
 
 def onMouseMove(app,mouseX,mouseY):
     app.cursorX=mouseX
