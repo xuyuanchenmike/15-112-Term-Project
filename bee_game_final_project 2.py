@@ -77,6 +77,7 @@ class helperBee:
         self.spriteCounter = 0
         self.x=x
         self.y=y
+        self.distancedic=dict()
     def drawPlayer(self):
         #Draw current kirb sprite
         drawImage(self.spriteList[self.spriteCounter], 
@@ -88,14 +89,25 @@ class helperBee:
             self.stepCounter = 0
 
     def playerOnStep(self,app):
-        self.dx=app.taregt-self.x
-        self.dy=app.target-self.y
-        self.x+=self.dx/4
-        self.y+=self.dy/4
-    
-    def findTarget(self):
+        if app.targetX!=None and app.targetY!=None:
+            self.dx=app.targetX-self.x
+            self.dy=app.targetY-self.y
+            self.x+=self.dx/25
+            self.y+=self.dy/25
+        
+    def findTarget(self,app):
+        minDistance=800
+        closetPollen=None
         for pollen in Pollinator.pollinatorList:
-            
+            d=((self.x-self.y)**2+(pollen.x-pollen.y)**2)**(1/2)
+            self.distancedic[d]=pollen
+        for distance in self.distancedic: 
+            if distance<minDistance:
+                mindistance=distance
+                closetPollen=self.distancedic[distance]
+        if closetPollen!=None:
+            app.targetX=closetPollen.x
+            app.targetY=closetPollen.y
 
 
 def onAppStart(app):
@@ -107,9 +119,12 @@ def onAppStart(app):
     app.cursorY=200
     app.numOfPollen=0
     app.pollen=[]
-    app.target=None
+    app.player=helperBee(200,200)
+    app.targetX=None
+    app.targetY=None
 
 def redrawAll(app):
+    app.player.drawPlayer()
     for flower in Flower.flowerList: 
         flower.drawFlower()
     for pollinator in Pollinator.pollinatorList:
@@ -122,13 +137,13 @@ def redrawAll(app):
         drawCircle(app.player.x,app.player.y+35,10,fill=color)
         cx += 20
 
-def onMouseMove(app,mouseX,mouseY):
-    app.cursorX=mouseX
-    app.cursorY=mouseY 
+# def onMouseMove(app,mouseX,mouseY):
+#     app.cursorX=mouseX
+#     app.cursorY=mouseY 
                 
 def onStep(app):
     app.stepTimeCounter+=1
-    #app.player.playerOnStep(app)
+    app.player.playerOnStep(app)
     if app.stepTimeCounter%50==0:
         Flower(random.randrange(800),800,50,50,"blue")
         Pollinator(random.randrange(800),800,"pink")
@@ -138,9 +153,9 @@ def onStep(app):
     #         numOfPollen=app.numOfPollen
     #         app.pollen.append((25+20*numOfPollen,25,\
     #                            pollinator.color))
-    colorList=[]
-    for pollen in app.pollen: 
-        colorList.append(pollen[2])
+    # colorList=[]
+    # for pollen in app.pollen: 
+    #     colorList.append(pollen[2])
     # for flower in Flower.flowerList: 
     #     if flower.pollinatedState(app):
     #         if app.pollen!=[]:
@@ -154,6 +169,7 @@ def onStep(app):
         pollinator.pollinatorOnStep()
     for flower in Flower.flowerList: 
         flower.flowerOnStep()
+    app.player.findTarget(app)
 
 def distance(x1,y1,x2,y2): 
     return ((x1-x2)**2+(y1-y2)**2)**(1/2)
