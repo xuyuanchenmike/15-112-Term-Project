@@ -3,7 +3,8 @@ from PIL import Image
 import random, time
 import math,copy
 #The Bee image is from https://www.pinterest.com/pin/572731277609446312/
-#I opened both Bee images using the code Mike Taylor put on piazza
+#I opened all Bee images using the code Mike Taylor put on piazza:
+#Lecture image / oop demos
 class Bee: 
     #From CMU's piazza post by Mike Taylor
     def __init__(self,x,y): 
@@ -65,17 +66,20 @@ class HelperBee:
     def __init__(self,x,y): 
         myGif = Image.open('beeSprite.gif')
         #From https://www.pinterest.com/pin/572731277609446312/
-        self.spriteList = []
+        self.leftSpriteList = []
+        self.rightSpriteList=[]
         for frame in range(myGif.n_frames):  #For every frame index...
             #Seek to the frame, convert it, add it to our sprite list
             myGif.seek(frame)
-            fr = myGif.resize((myGif.size[0]//10, myGif.size[1]//10))
-            fr = fr.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            image = myGif.resize((myGif.size[0]//10, myGif.size[1]//10))
+            fr = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             fr = CMUImage(fr)
-            self.spriteList.append(fr)
+            right=CMUImage(image)
+            self.leftSpriteList.append(fr)
+            self.rightSpriteList.append(right)
 
         ##Fix for broken transparency on frame 0
-        self.spriteList.pop(0)
+        self.leftSpriteList.pop(0)
         #Set sprite counters
         self.stepCounter = 0
         self.spriteCounter = 0
@@ -84,10 +88,15 @@ class HelperBee:
         self.collected=False
         HelperBee.color=None
         self.distancedic=dict()
+        self.direction="left"
     #From CMU's piazza Post by Mike Taylor
     def drawPlayer(self):
         #Draw current kirb sprite
-        drawImage(self.spriteList[self.spriteCounter], 
+        if self.direction=="left":
+            drawImage(self.leftSpriteList[self.spriteCounter], 
+                  self.x, self.y, align = 'center')
+        elif self.direction=="right":
+            drawImage(self.rightSpriteList[self.spriteCounter], 
                   self.x, self.y, align = 'center')
     #From CMU's piazza post by Mike Taylor
     def doStep(self):
@@ -102,6 +111,10 @@ class HelperBee:
             self.dy=app.targetY-self.y
             self.x+=self.dx/28
             self.y+=self.dy/28
+            if self.dx>0: 
+                self.direction="left"
+            else: 
+                self.direction="right"
         
     def findTarget(self,app):
         minDistance=800
@@ -116,6 +129,7 @@ class HelperBee:
         if closetPollen!=None:
             app.targetX=closetPollen.x
             app.targetY=closetPollen.y
+    
 
 class Pollinator:
     pollinatorList=[]
@@ -137,20 +151,18 @@ class Pollinator:
         else: 
             return False
     def gatheredState(self,app):
-        #for pollinator in Pollinator.pollinatorList:
-            if self.isClose(app.player)and\
-                self not in Pollinator.gathered:
-                Pollinator.gathered.append(self)
-                self.gathered=True
-                app.player.collected=True
-                return True
+        if self.isClose(app.player)and\
+            self not in Pollinator.gathered:
+            Pollinator.gathered.append(self)
+            self.gathered=True
+            app.player.collected=True
+            return True
     def gatheredStateByHelper(self,app):
-        #for pollinator in Pollinator.pollinatorList:
-            if self.isClose(app.helper)and\
-                self not in Pollinator.gathered:
-                Pollinator.gathered.append(self)
-                app.helper.collected=True
-                return True
+        if self.isClose(app.helper)and\
+            self not in Pollinator.gathered:
+            Pollinator.gathered.append(self)
+            app.helper.collected=True
+            return True
     def pollinatorOnStep(self):
         self.y-=self.up
         self.x+=self.c*math.sin(0.005*self.y)
@@ -178,11 +190,15 @@ class Flower:
         else: 
             return False
     def pollinatedState(self,app):
-        #for flower in Flower.flowerList:
-            if self.isClose(app.player) and\
-                self not in self.gathered:
-                Flower.gathered.append(self)
-                return True
+        if self.isClose(app.player) and\
+            self not in self.gathered:
+            Flower.gathered.append(self)
+            return True
+    def pollinatedStateByHelper(self,app):
+        if self.isClose(app.helper) and\
+            self not in self.gathered:
+            Flower.gathered.append(self)
+            return True
     def flowerOnStep(self):
         self.y-=self.up
         self.x+=self.c*math.sin(0.005*self.y)
@@ -197,8 +213,10 @@ def onAppStart(app):
     app.cursorY=200
     app.player=Bee(200,200)
     app.helper=HelperBee(400,200)
+    #app.helper=HelperBee(300,150)
     app.numOfPollen=0
     app.pollen=[]
+    app.pollenHelper=[]
     app.targetX=None
     app.targetY=None
 
@@ -215,10 +233,12 @@ def redrawAll(app):
         cy = 25
         drawCircle(cx,cy,10,fill=color)
         cx += 20
-        #if app.player.collected==True:
-        drawCircle(app.player.x,app.player.y+35,10,fill=app.player.color)
-        #if app.helper.collected==True:
-        drawCircle(app.helper.x,app.helper.y+35,10,fill=app.helper.color)
+        drawCircle(app.player.x,app.player.y+35,10,fill=color)
+    for (_,_,color) in app.pollenHelper:
+        cy = 25
+        drawCircle(cx,cy,10,fill=color)
+        cx += 20
+        drawCircle(app.helper.x,app.helper.y+35,10,fill=color)
 
 def onMouseMove(app,mouseX,mouseY):
     app.cursorX=mouseX
@@ -245,11 +265,15 @@ def onStep(app):
             app.numOfPollen+=1
             numOfPollen=app.numOfPollen
             HelperBee.color=pollinator.color
-            app.pollen.append((25+20*numOfPollen,25,\
+            app.pollenHelper.append((25+20*numOfPollen,25,\
                                pollinator.color))
     colorList=[]
     for pollen in app.pollen: 
         colorList.append(pollen[2])
+    colorListHelper=[]
+    for pollen in app.pollenHelper: 
+        colorListHelper.append(pollen[2])
+
     for flower in Flower.flowerList: 
         if flower.pollinatedState(app):
             if app.pollen!=[]:
@@ -258,6 +282,15 @@ def onStep(app):
                     flower.width+=20
                     flower.height+=20
                     app.numOfPollen-=1
+    for flower in Flower.flowerList: 
+        if flower.pollinatedStateByHelper(app):
+            if app.pollenHelper!=[]:
+                if flower.color in colorListHelper:
+                    app.pollenHelper.pop((colorListHelper.index(flower.color)))
+                    flower.width+=20
+                    flower.height+=20
+                    app.numOfPollen-=1
+
     for pollinator in Pollinator.pollinatorList:
         pollinator.pollinatorOnStep()
     for flower in Flower.flowerList: 
