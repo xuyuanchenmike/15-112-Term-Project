@@ -213,7 +213,7 @@ def onAppStart(app):
     app.cursorY=200
     app.player=Bee(200,200)
     app.helper=HelperBee(400,200)
-    #app.helper=HelperBee(300,150)
+    app.helper2=HelperBee(300,150)
     app.numOfPollen=0
     app.pollen=[]
     app.pollenHelper=[]
