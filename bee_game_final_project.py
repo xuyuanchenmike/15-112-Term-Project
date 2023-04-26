@@ -134,7 +134,8 @@ class HelperBee:
             else: 
                 self.direction="right"
 
-    def findTarget(self,app):
+    #This function directs the first helper bee to collect the closet pollen
+    def findTarget(self,app): 
         minDistance=800
         closetPollen=None
         for pollen in Pollinator.pollinatorList:
@@ -148,6 +149,8 @@ class HelperBee:
             app.targetX=closetPollen.x
             app.targetY=closetPollen.y
     
+    #This function directs the second helper bee to collect the pollen from upper
+    #half of the screen
     def findTarget2(self,app):
         for pollen in Pollinator.pollinatorList:
             if pollen.y<400 and pollen.x<800: 
@@ -172,24 +175,28 @@ class Pollinator:
             return True
         else: 
             return False
+    #This checks collision with the pollinator by the player Bee
     def gatheredState(self,app):
         if self.isClose(app.player)and\
             self not in Pollinator.gathered:
             Pollinator.gathered.append(self)
             app.player.collected=True
             return True
+    #This checks This checks collision with the pollinator by the first helper bee
     def gatheredStateByHelper1(self,app):
         if self.isClose(app.helper[0])and\
             self not in Pollinator.gathered:
             Pollinator.gathered.append(self)
             app.helper[0].collected=True
             return True
+    #This checks collision with the pollinator by the second bee
     def gatheredStateByHelper2(self,app):
         if self.isClose(app.helper[1])and\
             self not in Pollinator.gathered:
             Pollinator.gathered.append(self)
             app.helper[1].collected=True
             return True
+    #makes the pollinator move in sin wave
     def pollinatorOnStep(self):
         self.y-=self.up
         self.x+=self.c*math.sin(0.005*self.y)
@@ -215,6 +222,7 @@ class Flower:
             return True
         else: 
             return False
+    #checks collision with the flower
     def pollinatedState(self,app):
         if self.isClose(app.player) and\
             self not in self.gathered:
@@ -230,6 +238,7 @@ class Flower:
             self not in self.gathered:
             Flower.gathered.append(self)
             return True
+    #makes the flower move in sin wave
     def flowerOnStep(self):
         self.y-=self.up
         self.x+=self.c*math.sin(0.005*self.y)
@@ -299,9 +308,11 @@ def onStep(app):
     app.player.doStep()
     app.stepTimeCounter+=1
     app.player.playerOnStep(app)
+    #generate the flowers once in a while
     if app.stepTimeCounter%25==0:
         Flower(random.randrange(800),800,50,50,"blue")
         Pollinator(random.randrange(800),800,"pink")
+    #check if a pollen is picked up
     for pollinator in Pollinator.pollinatorList:
         if pollinator.gatheredState(app):
             app.numOfPollen+=1
@@ -334,7 +345,7 @@ def onStep(app):
         colorListHelper.append(pollen[2])
     for pollen in secondBee.pollenHelper: 
         colorListHelper2.append(pollen[2])
-
+    #check if a flower is pollianted
     for flower in Flower.flowerList: 
         if flower.pollinatedState(app):
             if app.pollen!=[]:
